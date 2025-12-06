@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+*.md
+chromedriver
+.vscode
+.idea
+coverage
+*.log
+app.pid
+simple-todo-app-mongodb-express-node-master
+
