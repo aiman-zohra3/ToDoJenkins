@@ -23,9 +23,10 @@ pipeline {
                     docker run --rm \
                         -v $PWD:/app \
                         -w /app \
+                        -p 5000:5000 \
                         --name todo-test-container \
                         todo-node-chrome:latest \
-                        npm test
+                        sh -c "npm start & sleep 15 && npm run test:selenium"
                 '''
             }
         }

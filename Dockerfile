@@ -3,7 +3,7 @@
 
 FROM node:18
 
-# Install Chrome dependencies and curl for health checks
+# Install Chrome dependencies and required libraries
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -30,28 +30,33 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     libu2f-udev \
     libvulkan1 \
+    xvfb \
+    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+# Install Google Chrome using modern method
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
+# Verify Chrome installation
+RUN google-chrome --version
+
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better Docker layer caching
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies (this will install chromedriver npm package)
 RUN npm install
 
 # Copy application code
 COPY . .
 
-# Expose port
+# Expose port for application (if needed)
 EXPOSE 5000
 
 # Default command (can be overridden in Jenkinsfile)
