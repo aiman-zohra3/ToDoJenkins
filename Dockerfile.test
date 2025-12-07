@@ -1,48 +1,36 @@
-# Dockerfile for running tests with Selenium and Jest
-# Includes all dev dependencies and Chrome/ChromeDriver
 
 FROM node:18-alpine
 
-# Install system dependencies including Chrome and ChromeDriver
+# Install Chromium and ChromeDriver
 RUN apk add --no-cache \
     chromium \
     chromium-chromedriver \
     ca-certificates \
     git \
-    python3 \
-    make \
-    g++ \
     && rm -rf /var/cache/apk/*
 
-# Ensure chromedriver is available at /usr/bin/chromedriver for Selenium
-# Alpine packages may install it under /usr/lib or other path; create a symlink if needed
-RUN if [ -f /usr/bin/chromedriver ]; then \
-            echo "chromedriver already at /usr/bin/chromedriver"; \
-        elif [ -f /usr/lib/chromium/chromedriver ]; then \
-            ln -s /usr/lib/chromium/chromedriver /usr/bin/chromedriver; \
-            echo "linked /usr/lib/chromium/chromedriver -> /usr/bin/chromedriver"; \
-        elif command -v chromedriver >/dev/null 2>&1; then \
-            ln -s "$(command -v chromedriver)" /usr/bin/chromedriver || true; \
-        else \
-            echo "WARNING: chromedriver not found during build"; \
-        fi
-
-# Create app directory
+# Set working directory
 WORKDIR /usr/src/app
+
+# Set environment variables
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROMEDRIVER_PATH=/usr/bin/chromedriver \
+    NODE_ENV=test \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies including dev dependencies
-RUN npm install --silent
+# Install dependencies
+RUN npm install
 
 # Copy application source
 COPY . .
 
-# Set environment variables for Chrome
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
-ENV NODE_ENV=test
+# Verify installations
+RUN echo "Chromium version:" && chromium-browser --version && \
+    echo "ChromeDriver version:" && chromedriver --version
 
-# Run tests by default
+# Default command
 CMD ["npm", "run", "test:selenium"]
