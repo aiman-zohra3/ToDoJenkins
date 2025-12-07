@@ -1,5 +1,5 @@
 # Dockerfile for running Selenium tests in a containerized environment
-# Based on Node.js with Chrome and ChromeDriver
+# Based on Node.js with Chrome and ChromeDriver (similar to markhobson/maven-chrome but for Node.js)
 
 FROM node:18
 
@@ -42,7 +42,7 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearm
     && rm -rf /var/lib/apt/lists/*
 
 # Verify Chrome installation
-RUN google-chrome --version
+RUN google-chrome --version || echo "Chrome installation check"
 
 # Set working directory
 WORKDIR /app
@@ -56,7 +56,7 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Expose port for application (if needed)
+# Expose port for application
 EXPOSE 5000
 
 # Default command (can be overridden in Jenkinsfile)

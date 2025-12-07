@@ -11,4 +11,4 @@ coverage
 *.log
 app.pid
 simple-todo-app-mongodb-express-node-master
-
+.DS_Store
