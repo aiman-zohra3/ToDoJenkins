@@ -23,30 +23,47 @@ pipeline {
             }
         }
 
-        stage('Start Application Container') {
+        stage('Install Dependencies') {
             steps {
                 script {
-                    echo "Starting application container..."
+                    echo "Installing npm dependencies..."
+                    sh """
+                        docker run --rm \
+                            --user root \
+                            -v \$(pwd):/app \
+                            -w /app \
+                            ${DOCKER_IMAGE} \
+                            npm install
+                    """
+                }
+            }
+        }
+
+        stage('Start Application') {
+            steps {
+                script {
+                    echo "Starting application..."
                     sh """
                         docker stop ${APP_CONTAINER} || true
                         docker rm ${APP_CONTAINER} || true
                         
                         docker run -d \
                             --name ${APP_CONTAINER} \
+                            --user root \
                             -p ${APP_PORT}:${APP_PORT} \
                             -v \$(pwd):/app \
                             -w /app \
                             ${DOCKER_IMAGE} \
-                            sh -c "npm install && npm start"
+                            npm start
                         
-                        echo "Waiting for application to start..."
-                        sleep 15
+                        echo "Waiting for application..."
+                        sleep 10
                     """
                 }
             }
         }
 
-        stage('Run Selenium Tests') {
+        stage('Run Tests') {
             steps {
                 script {
                     echo "Running Selenium tests..."
@@ -54,20 +71,21 @@ pipeline {
                         docker run --rm \
                             --name ${TEST_CONTAINER} \
                             --network host \
+                            --user root \
                             -v \$(pwd):/app \
                             -w /app \
                             -e TEST_BASE_URL=http://localhost:${APP_PORT} \
                             ${DOCKER_IMAGE} \
-                            sh -c "npm install && npm run test:selenium"
+                            npm run test:selenium
                     """
                 }
             }
         }
 
-        stage('Stop Application Container') {
+        stage('Cleanup') {
             steps {
                 script {
-                    echo "Stopping application container..."
+                    echo "Stopping containers..."
                     sh """
                         docker stop ${APP_CONTAINER} || true
                         docker rm ${APP_CONTAINER} || true
@@ -80,7 +98,7 @@ pipeline {
     post {
         always {
             script {
-                echo "Cleaning up..."
+                echo "Final cleanup..."
                 sh """
                     docker stop ${APP_CONTAINER} ${TEST_CONTAINER} || true
                     docker rm ${APP_CONTAINER} ${TEST_CONTAINER} || true
@@ -88,10 +106,10 @@ pipeline {
             }
         }
         success {
-            echo "Pipeline succeeded! All tests passed."
+            echo "✓ Pipeline succeeded! All tests passed."
         }
         failure {
-            echo "Pipeline failed! Check logs for details."
+            echo "✗ Pipeline failed. Check logs."
         }
     }
 }
