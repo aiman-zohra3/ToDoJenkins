@@ -2,17 +2,20 @@ pipeline {
     agent any
 
     environment {
+        REGISTRY = 'ghcr.io'
+        REPO_URL = 'https://github.com/aiman-zohra3/ToDoJenkins.git'
         DOCKER_IMAGE = 'ghcr.io/puppeteer/puppeteer:latest'
         APP_CONTAINER = 'todo-app-container'
         TEST_CONTAINER = 'todo-test-container'
         APP_PORT = '5000'
+        TEST_TIMEOUT = '60000'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 echo "Cloning repository from GitHub..."
-                git branch: 'main', url: 'https://github.com/aiman-zohra3/ToDoJenkins.git'
+                git branch: 'main', url: "${REPO_URL}"
             }
         }
 
@@ -33,7 +36,7 @@ pipeline {
                             -v \$(pwd):/app \
                             -w /app \
                             ${DOCKER_IMAGE} \
-                            npm install
+                            npm install --unsafe-perm
                     """
                 }
             }
@@ -63,19 +66,35 @@ pipeline {
             }
         }
 
+        stage('Build Test Image') {
+            steps {
+                script {
+                    echo "Building custom test Docker image with Chrome and ChromeDriver..."
+                    sh """
+                        docker build \
+                            -f Dockerfile.test \
+                            -t todo-test:latest \
+                            .
+                    """
+                }
+            }
+        }
+
         stage('Run Tests') {
             steps {
                 script {
-                    echo "Running Selenium tests..."
+                    echo "Running Selenium tests in containerized environment..."
                     sh """
                         docker run --rm \
                             --name ${TEST_CONTAINER} \
                             --network host \
                             --user root \
-                            -v \$(pwd):/app \
-                            -w /app \
+                            -v \$(pwd):/usr/src/app \
+                            -w /usr/src/app \
                             -e TEST_BASE_URL=http://localhost:${APP_PORT} \
-                            ${DOCKER_IMAGE} \
+                            -e CHROME_BIN=/usr/bin/chromium-browser \
+                            -e CHROMEDRIVER_PATH=/usr/bin/chromedriver \
+                            todo-test:latest \
                             npm run test:selenium
                     """
                 }

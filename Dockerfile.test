@@ -1,0 +1,36 @@
+# Dockerfile for running tests with Selenium and Jest
+# Includes all dev dependencies and Chrome/ChromeDriver
+
+FROM node:18-alpine
+
+# Install system dependencies including Chrome and ChromeDriver
+RUN apk add --no-cache \
+    chromium \
+    chromium-chromedriver \
+    ca-certificates \
+    git \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/cache/apk/*
+
+# Create app directory
+WORKDIR /usr/src/app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies including dev dependencies
+RUN npm install --silent
+
+# Copy application source
+COPY . .
+
+# Set environment variables for Chrome
+ENV CHROME_BIN=/usr/bin/chromium-browser
+ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+ENV NODE_ENV=test
+
+# Run tests by default
+ENTRYPOINT ["npm", "run"]
+CMD ["test:selenium"]
