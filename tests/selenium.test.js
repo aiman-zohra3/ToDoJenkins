@@ -7,40 +7,40 @@ describe('Todo Application - Selenium Test Suite', () => {
   let baseUrl;
 
 beforeAll(async () => {
-  baseUrl = process.env.TEST_BASE_URL || 'http://localhost:5000';
-  
-  console.log(`Using base URL: ${baseUrl}`);
-  
-  // Setup Chrome options for Puppeteer image
-  const chromeOptions = new chrome.Options();
-  
-  // Puppeteer image has Chrome at /usr/bin/google-chrome
-  chromeOptions.setChromeBinaryPath('/usr/bin/google-chrome');
-  
-  // Headless mode arguments
-  chromeOptions.addArguments('--headless=new');
-  chromeOptions.addArguments('--no-sandbox');
-  chromeOptions.addArguments('--disable-dev-shm-usage');
-  chromeOptions.addArguments('--disable-gpu');
-  chromeOptions.addArguments('--disable-software-rasterizer');
-  chromeOptions.addArguments('--disable-dev-tools');
-  chromeOptions.addArguments('--no-zygote');
-  chromeOptions.addArguments('--single-process');
-  chromeOptions.addArguments('--window-size=1920,1080');
-  
-  console.log('Building Chrome driver...');
-  
-  // Build the driver - let Selenium find ChromeDriver automatically
-  driver = await new Builder()
-    .forBrowser('chrome')
-    .setChromeOptions(chromeOptions)
-    .build();
-  
-  // Set implicit wait
-  await driver.manage().setTimeouts({ implicit: 10000, pageLoad: 30000 });
-  
-  console.log('Chrome driver initialized successfully');
-}, 120000); // Increased timeout to 120 seconds
+    baseUrl = process.env.TEST_BASE_URL || 'http://localhost:5000';
+    
+    console.log(`Using base URL: ${baseUrl}`);
+    console.log('Setting up Chrome for custom Docker image...');
+    
+    // Setup Chrome options
+    const chromeOptions = new chrome.Options();
+    
+    // Your Dockerfile.test has Chrome at google-chrome-stable
+    chromeOptions.setChromeBinaryPath('/usr/bin/google-chrome-stable');
+    
+    // Headless mode arguments
+    chromeOptions.addArguments('--headless=new');
+    chromeOptions.addArguments('--no-sandbox');
+    chromeOptions.addArguments('--disable-dev-shm-usage');
+    chromeOptions.addArguments('--disable-gpu');
+    chromeOptions.addArguments('--disable-software-rasterizer');
+    chromeOptions.addArguments('--no-zygote');
+    chromeOptions.addArguments('--single-process');
+    chromeOptions.addArguments('--window-size=1920,1080');
+    
+    console.log('Building Chrome driver...');
+    
+    // Build the driver
+    driver = await new Builder()
+      .forBrowser('chrome')
+      .setChromeOptions(chromeOptions)
+      .build();
+    
+    // Set implicit wait
+    await driver.manage().setTimeouts({ implicit: 10000, pageLoad: 30000 });
+    
+    console.log('Chrome driver initialized successfully');
+  }, 120000);
 
   afterAll(async () => {
     if (driver) {
