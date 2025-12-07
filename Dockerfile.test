@@ -14,6 +14,19 @@ RUN apk add --no-cache \
     g++ \
     && rm -rf /var/cache/apk/*
 
+# Ensure chromedriver is available at /usr/bin/chromedriver for Selenium
+# Alpine packages may install it under /usr/lib or other path; create a symlink if needed
+RUN if [ -f /usr/bin/chromedriver ]; then \
+            echo "chromedriver already at /usr/bin/chromedriver"; \
+        elif [ -f /usr/lib/chromium/chromedriver ]; then \
+            ln -s /usr/lib/chromium/chromedriver /usr/bin/chromedriver; \
+            echo "linked /usr/lib/chromium/chromedriver -> /usr/bin/chromedriver"; \
+        elif command -v chromedriver >/dev/null 2>&1; then \
+            ln -s "$(command -v chromedriver)" /usr/bin/chromedriver || true; \
+        else \
+            echo "WARNING: chromedriver not found during build"; \
+        fi
+
 # Create app directory
 WORKDIR /usr/src/app
 
