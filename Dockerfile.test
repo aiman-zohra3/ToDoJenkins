@@ -32,5 +32,4 @@ ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 ENV NODE_ENV=test
 
 # Run tests by default
-ENTRYPOINT ["npm", "run"]
-CMD ["test:selenium"]
+CMD ["npm", "run", "test:selenium"]
