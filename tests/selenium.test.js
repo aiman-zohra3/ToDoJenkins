@@ -202,7 +202,7 @@ describe('Todo Application - Selenium Test Suite', () => {
   });
 
   // Test Case 8: Logout Functionality
-  test('TC8: sucess -->  logout successfully', async () => {
+  test('TC8: success -->  logout successfully', async () => {
     const uniqueEmail = generateEmail();
     
     // Register and login
