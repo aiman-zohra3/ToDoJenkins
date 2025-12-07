@@ -2,7 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'todo-node-chrome'
+        # Using pre-built Docker image with Node.js + Chrome + ChromeDriver
+        # Alternative: Use node:18 and install Chrome at runtime, or use custom Dockerfile
+        # For simplicity, we'll use node:18 and install Chrome via script
+        # Or you can use: ghcr.io/puppeteer/puppeteer:latest (has Node + Chrome)
+        DOCKER_IMAGE = 'ghcr.io/puppeteer/puppeteer:latest'
         APP_CONTAINER = 'todo-app-container'
         TEST_CONTAINER = 'todo-test-container'
         APP_PORT = '5000'
@@ -16,10 +20,11 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Pull Docker Image') {
             steps {
-                echo "Building Docker image with Node.js + Chrome + ChromeDriver..."
-                sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                echo "Pulling pre-built Docker image with Node.js + Chrome + ChromeDriver..."
+                echo "Using: ${DOCKER_IMAGE}"
+                sh "docker pull ${DOCKER_IMAGE} || echo 'Image pull failed, will use local image'"
             }
         }
 
@@ -33,10 +38,14 @@ pipeline {
                         docker rm ${APP_CONTAINER} || true
                         
                         # Start the application container in background
+                        # Mount the code and install dependencies, then start the app
                         docker run -d \
                             --name ${APP_CONTAINER} \
                             -p ${APP_PORT}:${APP_PORT} \
-                            ${DOCKER_IMAGE}:latest
+                            -v \$(pwd):/app \
+                            -w /app \
+                            ${DOCKER_IMAGE} \
+                            sh -c "npm install && npm start"
                         
                         # Wait for application to be ready
                         echo "Waiting for application to start..."
@@ -55,14 +64,16 @@ pipeline {
                 script {
                     echo "Running Selenium tests in containerized environment..."
                     sh """
-                        # Run tests in a new container using the same image
+                        # Run tests in a new container using the same pre-built image
                         # The tests will connect to the application running in the other container
                         docker run --rm \
                             --name ${TEST_CONTAINER} \
                             --network host \
+                            -v \$(pwd):/app \
+                            -w /app \
                             -e TEST_BASE_URL=http://localhost:${APP_PORT} \
-                            ${DOCKER_IMAGE}:latest \
-                            npm run test:selenium
+                            ${DOCKER_IMAGE} \
+                            sh -c "npm install && npm run test:selenium"
                     """
                 }
             }
