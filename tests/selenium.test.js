@@ -33,16 +33,15 @@ describe('Todo Application - Selenium Test Suite', () => {
     chromeOptions.addArguments('--disable-extensions');
     chromeOptions.addArguments('--window-size=1920,1080');
     
-    // Set up the ChromeDriver service
-    const service = new chrome.ServiceBuilder(chromeDriverPath).build();
-    chrome.setDefaultService(service);
-    
     console.log('Building Chrome driver...');
     
-    // Build the driver
+    // Build the driver with ChromeDriver service
+    const service = new chrome.ServiceBuilder(chromeDriverPath);
+    
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(chromeOptions)
+      .setChromeService(service)
       .build();
     
     // Set implicit wait
