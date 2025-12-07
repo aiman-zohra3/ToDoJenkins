@@ -11,23 +11,36 @@ beforeAll(async () => {
     const options = new chrome.Options();
     CHROME_OPTIONS.args.forEach(arg => options.addArguments(arg));
     
-    // Try multiple methods to find ChromeDriver
     let serviceBuilder = null;
+    const fs = require('fs');
     
-    // Method 1: Try chromedriver npm package
+    // Method 1: Try system ChromeDriver first (for Docker/CI environments)
+    const systemChromeDriver = process.env.CHROMEDRIVER_PATH || '/usr/bin/chromedriver';
     try {
-      const chromedriver = require('chromedriver');
-      if (chromedriver && chromedriver.path) {
-        serviceBuilder = new ServiceBuilder(chromedriver.path);
-        console.log('Using ChromeDriver from npm package:', chromedriver.path);
+      if (fs.existsSync(systemChromeDriver)) {
+        serviceBuilder = new ServiceBuilder(systemChromeDriver);
+        console.log('Using ChromeDriver from system PATH:', systemChromeDriver);
       }
     } catch (err) {
-      // Package not available, continue to next method
+      // Continue to next method
     }
     
-    // Method 2: If package method failed, use system PATH
+    // Method 2: Try chromedriver npm package
     if (!serviceBuilder) {
-      console.log('Using ChromeDriver from system PATH');
+      try {
+        const chromedriver = require('chromedriver');
+        if (chromedriver && chromedriver.path) {
+          serviceBuilder = new ServiceBuilder(chromedriver.path);
+          console.log('Using ChromeDriver from npm package:', chromedriver.path);
+        }
+      } catch (err) {
+        // Package not available, continue to next method
+      }
+    }
+    
+    // Method 3: Use system PATH auto-discovery if all else fails
+    if (!serviceBuilder) {
+      console.log('Using ChromeDriver from system PATH (auto-discovery)');
       serviceBuilder = new ServiceBuilder();
     }
     
@@ -45,45 +58,46 @@ beforeAll(async () => {
   } catch (error) {
     console.error('Failed to initialize Chrome driver:', error.message);
     console.error('\nTroubleshooting steps:');
-    console.error('1. Install ChromeDriver: npm install chromedriver@latest --save-dev');
-    console.error('2. Or download manually from: https://googlechromelabs.github.io/chrome-for-testing/');
-    console.error('3. Make sure Chrome browser is installed and up to date');
+    console.error('1. For local: npm install chromedriver@latest --save-dev');
+    console.error('2. For Docker: Ensure /usr/bin/chromedriver exists');
+    console.error('3. Make sure Chrome/Chromium browser is installed and up to date');
     throw error;
   }
 }, 120000); // Increased timeout to 120 seconds
 
 afterAll(async () => {
   if (driver) await driver.quit();
-}, 30000);
+        // Try multiple methods to find ChromeDriver - prefer system first for Docker
 
+        const fs = require('fs');
 // Helper: Wait for element
-async function waitForElement(selector, timeout = 10000) {
+        // Method 1: Try system ChromeDriver first (for Docker/CI environments)
+        const systemChromeDriver = process.env.CHROMEDRIVER_PATH || '/usr/bin/chromedriver';
   return await driver.wait(until.elementLocated(By.css(selector)), timeout);
+          if (fs.existsSync(systemChromeDriver)) {
+            serviceBuilder = new ServiceBuilder(systemChromeDriver);
+            console.log('Using ChromeDriver from system PATH:', systemChromeDriver);
 }
-
-// Helper: Unique email
-function generateEmail() {
-  return `test_${Date.now()}@example.com`;
-}
-
-describe('Todo Application - Selenium Test Suite', () => {
-
-  // --------------------------------------------------------
-  // TC1: HOME PAGE
-  // --------------------------------------------------------
-  test('TC1: Should load home page successfully', async () => {
-    await driver.get(BASE_URL);
-    const title = await driver.getTitle();
-    expect(title).toBeTruthy();
+        } catch (err) {
+          // Continue to next method
+        }
+    
+        // Method 2: Try chromedriver npm package
+        if (!serviceBuilder) {
+          try {
+            const chromedriver = require('chromedriver');
+            if (chromedriver && chromedriver.path) {
+              serviceBuilder = new ServiceBuilder(chromedriver.path);
+              console.log('Using ChromeDriver from npm package:', chromedriver.path);
+            }
+          } catch (err) {
+            // Package not available, continue to next method
 
     const welcomeText = await driver.findElement(By.css('h1.display-3')).getText();
-    expect(welcomeText).toContain('Welcome to ToDoNow!');
-  });
-
+    
+        // Method 3: If both methods failed, use system PATH auto-discovery
   // --------------------------------------------------------
-  // TC2: About
-  // --------------------------------------------------------
-  test('TC2: Should navigate to about page', async () => {
+          console.log('Using ChromeDriver from system PATH (auto-discovery)');
     await driver.get(BASE_URL);
 
     const aboutLink = await waitForElement('a.nav-link[href="/about"]');
