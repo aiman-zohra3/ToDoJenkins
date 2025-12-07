@@ -33,8 +33,8 @@ pipeline {
                     sh """
                         docker run --rm \
                             --user root \
-                            -v \$(pwd):/app \
-                            -w /app \
+                            -v \$(pwd):/usr/src/app \
+                            -w /usr/src/app \
                             ${DOCKER_IMAGE} \
                             npm install --unsafe-perm
                     """
@@ -54,8 +54,8 @@ pipeline {
                             --name ${APP_CONTAINER} \
                             --user root \
                             -p ${APP_PORT}:${APP_PORT} \
-                            -v \$(pwd):/app \
-                            -w /app \
+                            -v \$(pwd):/usr/src/app \
+                            -w /usr/src/app \
                             ${DOCKER_IMAGE} \
                             npm start
                         
